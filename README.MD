@@ -7,7 +7,6 @@ Timers switch on or off on a certain time. There are three types of timers `time
 | Property | Type    | Description                                           |
 |----------|---------|-------------------------------------------------------|
 | enabled  | boolean | defines if timer is enabled                           |
-| type     | string  | type of timer: "time"                                 |
 | time     | string  | time cron pattern to fire timer                       |
 | state    | string  | state to switch to when timer fires e.g. on, off etc. |
 
@@ -33,7 +32,6 @@ Source: https://github.com/node-schedule/node-schedule/blob/master/README.md
 {
     enabled: false,
     state: 'off',
-    type: 'time',
     time: '0 0 22 * * *'     // (make sure you don't use * * 22 * * * instead. Otherwise it will be triggered every second)
 },
 ```
@@ -43,9 +41,8 @@ Source: https://github.com/node-schedule/node-schedule/blob/master/README.md
 | Property  | Type    | Description                                            |
 |-----------|---------|--------------------------------------------------------|
 | enabled   | boolean | defines if timer is enabled                            |
-| type      | string  | type of timer: "sun"                                   |
 | offset    | string  | time offset in: sec min hour day month year            |
-| condition | string  | type of sun condition see table below e.g. "sunset"    |
+| time      | string  | type of sun condition see table below e.g. "sunset"    |
 | state     | string  | state to switch to after timer fires e.g. on, off etc. |
 
 
@@ -74,8 +71,7 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 ```js
 {
     enabled: true,
-    type: 'sun',
-    condition: 'sunset',
+    time: 'sunset',
     state: 'on',
     offset: '* * -2 * * *'
 }
@@ -96,7 +92,6 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 ```js
 {
     enabled: true,
-    type: 'event',
     offset: '5 * * * * *',
     event: 'on',
     state: 'off',
@@ -121,15 +116,13 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 // Switch on every day at sunset
 {
     enabled: true,
-    type: 'sun',
-    condition: 'sunset',
+    time: 'sunset',
     state: 'on'
 },
 
 // Switch off Sunday till Thursday at 23:00h
 {
     enabled: true,
-    type: 'time',
     time: '0 0 23 * * SUN-THU',
     state: 'off'
 },
@@ -137,7 +130,6 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 // Switch off Saturday till Sunday at 0:30h
 {
     enabled: true,
-    type: 'time',
     time: '0 30 0 * * SAT-SUN',
     state: 'off'
 }
@@ -150,7 +142,6 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 {
     enabled: false,
     state: 'off',
-    type: 'time',
     time: '0 0 22 * * *'     // (make sure you don't use * * 22 * * * instead. Otherwise it will be triggered every second)
 },
 ```
@@ -159,9 +150,8 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 ```js
 {
     enabled: true,
-    type: 'sun',
     state: 'on',
-    condition: 'sunset',     // sunrise | sunset and more see https://www.npmjs.com/package/suncalc for all options
+    time: 'sunset',     // sunrise | sunset and more see https://www.npmjs.com/package/suncalc for all options
     offset: '* * -1 * * *',  // One hour before sunset
 },
 ```
@@ -171,8 +161,7 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 {
     enabled: true,
     state: 'off',
-    type: 'sun',
-    condition: 'sunrise',
+    time: 'sunrise',
     offset: '* * 2 * * *',
 },
 ```
@@ -181,8 +170,7 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 ```js
 {
     enabled: true,
-    type: 'sun',
-    condition: 'sunset',
+    time: 'sunset',
     state: 'on'
 },
 ```
@@ -191,7 +179,6 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 ```js
 {
     enabled: true,
-    type: 'time',
     time: '0 0 23 * * SUN-THU',
     state: 'off'
 },
@@ -201,19 +188,7 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 ```js
 {
     enabled: true,
-    type: 'time',
     time: '0 30 0 * * SAT-SUN',
-    state: 'off'
-},
-```
-
-**Execute off 5 seconds after on**
-```js
-{
-    enabled: true,
-    type: 'event',
-    offset: '5 * * * * *',
-    event: 'on',
     state: 'off'
 },
 ```

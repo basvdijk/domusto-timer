@@ -37,6 +37,8 @@ class DomustoTimer extends DomustoPlugin {
             website: 'http://domusto.com'
         });
 
+        const suncCalcConstants = ['sunrise', 'sunriseEnd', 'goldenHourEnd', 'solarNoon', 'goldenHour', 'sunsetStart', 'sunset', 'dusk', 'nauticalDusk', 'night', 'nadir', 'nightEnd', 'nauticalDawn', 'dawn'];
+
         for (let d of config.devices) {
 
             let device = new DomustoDevice(d);
@@ -48,10 +50,16 @@ class DomustoTimer extends DomustoPlugin {
 
                 for (let timer of device.pluginSettings.timer) {
 
-                    if (timer.enabled) {
-                        this.initTimer(device, timer);
-                    } else {
+                    if (!timer.enabled) {
                         this.console.warning(`    Timer (${timer.type})  disabled for ${device.id} state ${timer.state}`);
+                    } else {
+
+                        if (suncCalcConstants.indexOf(timer.time) > -1) {
+                            this.scheduleSunTimer(device, timer);
+                        } else {
+                            this.scheduleCronTimer(device, timer);
+                        }
+
                     }
 
                 }
@@ -61,35 +69,18 @@ class DomustoTimer extends DomustoPlugin {
 
     }
 
-    initTimer(device, timer) {
+    scheduleCronTimer(device, timer) {
 
-        let _device = device;
+        this.console.log('    Timer (time)  enabled  for', device.id, 'state', timer.state, 'at', timer.time);
 
-        switch (timer.type) {
+        let job = schedule.scheduleJob(timer.time, () => {
+            this.console.log('     Timer (time)  activated for', device.id, 'state', timer.state);
 
-            case 'time':
-                this.console.log('    Timer (time)  enabled  for', device.id, 'state', timer.state, 'at', timer.time);
+            this.broadcastSignal(device.plugin.deviceId, {
+                state: timer.state
+            }, Domusto.SignalSender.client, device.plugin.id);
 
-                let job = schedule.scheduleJob(timer.time, () => {
-                    this.console.log('     Timer (time)  activated for', device.id, 'state', timer.state);
-
-                    this.broadcastSignal(device.plugin.deviceId, {
-                        state: timer.state
-                    }, Domusto.SignalSender.client, device.plugin.id);
-
-                });
-
-                break;
-
-            case 'sun':
-                this.scheduleSunTimer(device, timer);
-                break;
-
-            case 'event':
-                this.initEventTimer(device, timer);
-                break;
-
-        }
+        });
 
     }
 
@@ -135,29 +126,29 @@ class DomustoTimer extends DomustoPlugin {
 
     }
 
-    /**
-     * Schedules a timer according to sunset, sunrise etc
-     * @param {object} device The device who executes the command
-     * @param {object} timer The timer object which contains the timer information
-     */
-    initEventTimer(device, timer) {
+    // /**
+    //  * Schedules a timer according to sunset, sunrise etc
+    //  * @param {object} device The device who executes the command
+    //  * @param {object} timer The timer object which contains the timer information
+    //  */
+    // initEventTimer(device, timer) {
 
-        let _device = device;
-        let _timer = timer;
+    //     let _device = device;
+    //     let _timer = timer;
 
-        let date = this._offsetDate(new Date(), _timer.offset);
+    //     let date = this._offsetDate(new Date(), _timer.offset);
 
-        schedule.scheduleJob(date, () => {
-            this.console.log('   Timer (event) activated for', _device.id, 'state', _timer.state);
-            // util.logTimersToFile('Timer (event) activated for ' + _device.id + ' state: ' + _timer.state);
+    //     schedule.scheduleJob(date, () => {
+    //         this.console.log('   Timer (event) activated for', _device.id, 'state', _timer.state);
+    //         // util.logTimersToFile('Timer (event) activated for ' + _device.id + ' state: ' + _timer.state);
 
-            this.broadcastSignal(device.plugin.deviceId, {
-                state: timer.state
-            }, Domusto.SignalSender.client, device.plugin.id);
+    //         this.broadcastSignal(device.plugin.deviceId, {
+    //             state: timer.state
+    //         }, Domusto.SignalSender.client, device.plugin.id);
 
-        });
+    //     });
 
-    }
+    // }
 
     /**
  * Offsets the given date with the specified offset in cron format
