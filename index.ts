@@ -50,6 +50,26 @@ class DomustoTimer extends DomustoPlugin {
 
                 for (let timer of device.pluginSettings.timer) {
 
+                    let isConfigurationValid = this.validateConfigurationAttributes(timer, [
+                        {
+                            attribute: 'enabled',
+                            type: 'boolean'
+                        },
+                        {
+                            attribute: 'time',
+                            type: 'string'
+                        },
+                        {
+                            attribute: 'state',
+                            type: 'string',
+                            validValues: ['on', 'off', 'trigger']
+                        },
+                    ]);
+
+                    if (!isConfigurationValid) {
+                        break;
+                    }
+
                     if (!timer.enabled) {
                         this.console.warning(`    Timer (${timer.type})  disabled for ${device.id} state ${timer.state}`);
                     } else {
@@ -69,6 +89,13 @@ class DomustoTimer extends DomustoPlugin {
 
     }
 
+    /**
+     * Schdules a timer for timers set in cron format
+     *
+     * @param {any} device Device to set timer for
+     * @param {any} timer Timer to set
+     * @memberof DomustoTimer
+     */
     scheduleCronTimer(device, timer) {
 
         this.console.log('    Timer (time)  enabled  for', device.id, 'state', timer.state, 'at', timer.time);
@@ -86,8 +113,10 @@ class DomustoTimer extends DomustoPlugin {
 
     /**
      * Schedules a timer according to sunset, sunrise etc
-     * @param {object} device The device who executes the command
-     * @param {object} timer The timer object which contains the timer information
+     *
+     * @param {any} device Device to set timer for
+     * @param {any} timer Timer to set
+     * @memberof DomustoTimer
      */
     scheduleSunTimer(device, timer) {
 
@@ -151,9 +180,9 @@ class DomustoTimer extends DomustoPlugin {
     // }
 
     /**
- * Offsets the given date with the specified offset in cron format
- * @param {string} cronData Date in the cron format e.g "* 10 * * * *" to offset 10 minutes
- */
+     * Offsets the given date with the specified offset in cron format
+     * @param {string} cronData Date in the cron format e.g "* 10 * * * *" to offset 10 minutes
+     */
     _offsetDate(date, cronDateOffset) {
 
         if (cronDateOffset) {
