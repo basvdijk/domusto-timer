@@ -37,7 +37,7 @@ Timers are set in the `plugin-settings` section of each device. Since the plugin
 
 On the bottom of this document you'll find more example configurations.
 
-## Time timer options
+## Time timer
 
 | Property | Type    | Description                                           |
 |----------|---------|-------------------------------------------------------|
@@ -60,7 +60,7 @@ The cron format consists of:
 
 Source: https://github.com/node-schedule/node-schedule/blob/master/README.md
 
-### Example
+### Time timer example
 
 **Switch off every day at 22:00h**
 ```js
@@ -71,7 +71,7 @@ Source: https://github.com/node-schedule/node-schedule/blob/master/README.md
 },
 ```
 
-## Sun timer options
+## Sun timer
 
 | Property  | Type    | Description                                            |
 |-----------|---------|--------------------------------------------------------|
@@ -100,7 +100,7 @@ Source: https://github.com/node-schedule/node-schedule/blob/master/README.md
 
 Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 
-### Example
+### Sun timer example
 
 **Switch on every day two hours before sunset**
 ```js
@@ -112,7 +112,7 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 }
 ```
 
-## Event timer options
+## Event timer
 
 | Property | Type    | Description                                            |     |         |
 |----------|---------|--------------------------------------------------------|-----|---------|
@@ -122,7 +122,7 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 | time     | string  | event to listen to on                                  | off | trigger |
 | state    | string  | state to switch to after timer fires e.g. on, off etc. |     |         |
 
-### Example
+### Event timer Example
 
 ```js
 {
@@ -195,7 +195,7 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 {
     enabled: true,
     state: 'on',
-    time: 'sunset',     // sunrise | sunset and more see https://www.npmjs.com/package/suncalc for all options
+    time: 'sunset',
     offset: '* * -1 * * *',  // One hour before sunset
 },
 ```
