@@ -37,7 +37,8 @@ class DomustoTimer extends DomustoPlugin {
             website: 'http://domusto.com'
         });
 
-        const suncCalcConstants = ['sunrise', 'sunriseEnd', 'goldenHourEnd', 'solarNoon', 'goldenHour', 'sunsetStart', 'sunset', 'dusk', 'nauticalDusk', 'night', 'nadir', 'nightEnd', 'nauticalDawn', 'dawn'];
+        const sunCalcConstants = ['sunrise', 'sunriseEnd', 'goldenHourEnd', 'solarNoon', 'goldenHour', 'sunsetStart', 'sunset', 'dusk', 'nauticalDusk', 'night', 'nadir', 'nightEnd', 'nauticalDawn', 'dawn'];
+        const deviceEvents = ['on', 'off', 'trigger'];
 
         for (let d of config.devices) {
 
@@ -46,7 +47,7 @@ class DomustoTimer extends DomustoPlugin {
             // Initialise timers when specified
             if (device.pluginSettings.timer) {
 
-                this.console.header('INITIALISING TIMERS for', device.id);
+                this.console.header(`INITIALISING TIMERS for ${device.id} (${device.name})`);
 
                 for (let timer of device.pluginSettings.timer) {
 
@@ -74,8 +75,10 @@ class DomustoTimer extends DomustoPlugin {
                         this.console.warning(`    Timer (${timer.type})  disabled for ${device.id} state ${timer.state}`);
                     } else {
 
-                        if (suncCalcConstants.indexOf(timer.time) > -1) {
+                        if (sunCalcConstants.indexOf(timer.time) > -1) {
                             this.scheduleSunTimer(device, timer);
+                        } else if (deviceEvents.indexOf(timer.time) > -1) {
+                            this.scheduleEventTimer(device, timer);
                         } else {
                             this.scheduleCronTimer(device, timer);
                         }
@@ -86,6 +89,8 @@ class DomustoTimer extends DomustoPlugin {
 
             }
         }
+
+        this.console.header(`${pluginConfiguration.id} plugin ready`);
 
     }
 
@@ -155,33 +160,43 @@ class DomustoTimer extends DomustoPlugin {
 
     }
 
-    // /**
-    //  * Schedules a timer according to sunset, sunrise etc
-    //  * @param {object} device The device who executes the command
-    //  * @param {object} timer The timer object which contains the timer information
-    //  */
-    // initEventTimer(device, timer) {
+    /**
+     * Schedules a timer according to sunset, sunrise etc
+     * @param {object} device The device who executes the command
+     * @param {object} timer The timer object which contains the timer information
+     */
+    scheduleEventTimer(device, timer) {
 
-    //     let _device = device;
-    //     let _timer = timer;
+        this.console.error('event timer');
 
-    //     let date = this._offsetDate(new Date(), _timer.offset);
+        let _device = device;
+        let _timer = timer;
 
-    //     schedule.scheduleJob(date, () => {
-    //         this.console.log('   Timer (event) activated for', _device.id, 'state', _timer.state);
-    //         // util.logTimersToFile('Timer (event) activated for ' + _device.id + ' state: ' + _timer.state);
+        DomustoSignalHub.subject.subscribe((signal: Domusto.Signal) => {
 
-    //         this.broadcastSignal(device.plugin.deviceId, {
-    //             state: timer.state
-    //         }, Domusto.SignalSender.client, device.plugin.id);
+            if (signal.pluginId === device.plugin.id &&
+                signal.deviceId === device.plugin.deviceId &&
+                signal.data['state'] === timer.time) {
 
-    //     });
+                let date = this._offsetDate(new Date(), _timer.offset);
 
-    // }
+                schedule.scheduleJob(date, () => {
+                    this.console.log('   Timer (offset) activated for', _device.id, 'state', _timer.state);
+                    this.broadcastSignal(device.plugin.deviceId, {
+                        state: timer.state
+                    }, Domusto.SignalSender.client, device.plugin.id);
+
+                });
+            }
+
+        });
+
+
+    }
 
     /**
      * Offsets the given date with the specified offset in cron format
-     * @param {string} cronData Date in the cron format e.g "* 10 * * * *" to offset 10 minutes
+     * @param {string} cronData Date in the cron format e.g "+ * 10 * * * *" to offset 10 minutes
      */
     _offsetDate(date, cronDateOffset) {
 
