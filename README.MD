@@ -1,6 +1,41 @@
 # Timer
 
-Timers switch on or off on a certain time. There are three types of timers `time`, `sun` and `action`. `Time` is time related and uses cron notation, while the `sun` is sun related e.g. sunset, sunrise etc. `Event` sets a timer based on an event like `on` or `off` and executes another action after a specified time.
+Timers switch on or off at a certain time. There are three types of timers:
+- `Time` is time related and uses cron notation
+- `Sun` is sun related e.g. sunset, sunrise etc. 
+- `Event` sets a timer based on an event like `on` or `off` and executes another action after a specified time.
+
+## Configuration
+Timers are set in the `plugin-settings` section of each device. Since the plugin is called `timer` its settings are set under the `timer` section as shown in the example below:
+
+```js
+{
+    id: 'KAKU1',
+    enabled: true,
+    role: 'output',
+    name: 'switch 1',
+    type: 'switch',
+    subType: 'on/off',
+    plugin: {
+        id: 'RFXCOM',
+        deviceId: 'Lighting2/AC-0x02340504/4',
+    },
+    pluginSettings: {
+
+        timer: [
+            {
+                enabled: true,
+                time: 'on',
+                offset: '10 * * * * *',
+                state: 'off',
+            }
+        ]
+        
+    }
+}
+```
+
+On the bottom of this document you'll find more example configurations.
 
 ## Time timer options
 
@@ -84,7 +119,7 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 | enabled  | boolean | defines if timer is enabled                            |     |         |
 | type     | string  | type of timer: "event"                                 |     |         |
 | offset   | string  | time offset in: sec min hour day month year            |     |         |
-| event    | string  | event to listen to on                                  | off | trigger |
+| time     | string  | event to listen to on                                  | off | trigger |
 | state    | string  | state to switch to after timer fires e.g. on, off etc. |     |         |
 
 ### Example
@@ -93,7 +128,7 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 {
     enabled: true,
     offset: '5 * * * * *',
-    event: 'on',
+    time: 'on',
     state: 'off',
 },
 ```
@@ -108,8 +143,6 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 One thing is very important to note here. The mentioned 0:30h is actually already in the next day. So to turn off our lights correctly we have to turn them off late on *Saturday and Sunday morning*.
 
 At first sight the timers defined below look weird, Sunday is defined twice and Monday is missing. Actually this is correct. On Sunday morning at 0:30h the light goes off which we switched on after sunset on Saturday evening. However on this same Sunday the go on at sunset and off on 23:00h.
-
-### Config
 
 ```js
 
@@ -135,7 +168,18 @@ At first sight the timers defined below look weird, Sunday is defined twice and 
 }
 ```
 
-## Other timer examples
+## Example configurations
+
+
+**Switch off 10 minutes after turning on**
+```js
+{
+    enabled: true,
+    time: 'on',
+    offset: '* 10 * * * *',
+    state: 'off',
+}
+```
 
 **Switch off every day at 22:00h**
 ```js
