@@ -6,7 +6,7 @@ import DomustoSignalHub from '../../domusto/DomustoSignalHub';
 import DomustoDevice from '../../domusto/DomustoDevice';
 
 // INTERFACES
-import { Domusto } from '../../domusto/DomustoInterfaces';
+import { Domusto } from '../../domusto/DomustoTypes';
 
 // PLUGIN SPECIFIC
 import * as SunCalc from 'suncalc';
@@ -166,8 +166,6 @@ class DomustoTimer extends DomustoPlugin {
      * @param {object} timer The timer object which contains the timer information
      */
     scheduleEventTimer(device, timer) {
-
-        this.console.error('event timer');
 
         let _device = device;
         let _timer = timer;
