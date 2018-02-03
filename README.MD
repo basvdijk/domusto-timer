@@ -1,9 +1,38 @@
-# Timer
+# DOMUSTO Timer plugin
+
+```
+plugin:       Timer
+author:       Bas van Dijk
+category:     system
+version:      0.0.1
+website:      http://domusto.com
+description:  Fire events based on time events
+```
+
+## Features
+- [x] Fire event on specific time
+- [x] Fire event on sun event e.g. sunrise / sunset
+- [x] Fire event n seconds after a switch turned on / off
+- [X] Set an offset to the specified time
+- [ ] Fire event with a random time offset within specified boundaries
+
+## Hardware needed
+- none
+
+## Tested with
+- n/a
 
 Timers switch on or off at a certain time. There are three types of timers:
 - `Time` is time related and uses cron notation
 - `Sun` is sun related e.g. sunset, sunrise etc. 
 - `Event` sets a timer based on an event like `on` or `off` and executes another action after a specified time.
+
+## Installation
+
+Execute in the domusto-server folder:
+```sh
+$ ./domusto.js plugin add basvdijk/domusto-timer
+```
 
 ## Configuration
 Timers are set in the `plugin-settings` section of each device. Since the plugin is called `timer` its settings are set under the `timer` section as shown in the example below:
