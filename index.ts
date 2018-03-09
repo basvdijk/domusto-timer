@@ -141,7 +141,7 @@ class DomustoTimer extends DomustoPlugin {
 
         this.console.log('    Timer (sun)   enabled  for', _device.id, 'state', _timer.state, 'at', date, '/', new Date(date).toLocaleString());
 
-        schedule.scheduleJob(date, () => {
+        let job = schedule.scheduleJob(date, () => {
             this.console.log('     Timer (sun)  activated for', _device.id, 'state', _timer.state);
 
             this.console.log(device.plugin.deviceId, {
@@ -153,6 +153,7 @@ class DomustoTimer extends DomustoPlugin {
                 state: timer.state
             }, Domusto.SignalSender.client, device.plugin.id);
 
+            job.cancel();
 
             // Reschedule for next day
             this.scheduleSunTimer(_device, _timer);
@@ -178,11 +179,14 @@ class DomustoTimer extends DomustoPlugin {
 
                 let date = this._offsetDate(new Date(), _timer.offset);
 
-                schedule.scheduleJob(date, () => {
+                let job = schedule.scheduleJob(date, () => {
                     this.console.log('   Timer (offset) activated for', _device.id, 'state', _timer.state);
+
                     this.broadcastSignal(device.plugin.deviceId, {
                         state: timer.state
                     }, Domusto.SignalSender.client, device.plugin.id);
+
+                    job.cancel();
 
                 });
             }
