@@ -116,6 +116,21 @@ class DomustoTimer extends DomustoPlugin {
 
     }
 
+    getSunTime(timer) {
+        let times = SunCalc.getTimes(new Date(), config.location.latitude, config.location.longitude);
+        let date = this._offsetDate(times[timer.time], timer.offset);
+
+        // If the next event is tomorrow
+        if (date < new Date()) {
+            let today = new Date();
+            let tomorrow = new Date(today.getTime() + (24 * 60 * 60 * 1000));
+            times = SunCalc.getTimes(tomorrow, config.location.latitude, config.location.longitude);
+            date = this._offsetDate(times[timer.time], timer.offset);
+        }
+
+        return date;
+    }
+
     /**
      * Schedules a timer according to sunset, sunrise etc
      *
@@ -128,21 +143,12 @@ class DomustoTimer extends DomustoPlugin {
         let _device = device;
         let _timer = timer;
 
-        let times = SunCalc.getTimes(new Date(), config.location.latitude, config.location.longitude);
-        let date = this._offsetDate(times[_timer.time], _timer.offset);
+        let date = this.getSunTime(_timer);
 
-        // If the next event is tomorrow
-        if (date < new Date()) {
-            let today = new Date();
-            let tomorrow = new Date(today.getTime() + (24 * 60 * 60 * 1000));
-            times = SunCalc.getTimes(tomorrow, config.location.latitude, config.location.longitude);
-            date = this._offsetDate(times[_timer.time], _timer.offset);
-        }
-
-        this.console.log('    Timer (sun)   enabled  for', _device.id, 'state', _timer.state, 'at', date, '/', new Date(date).toLocaleString());
+        this.logToFileAndConsole('    Timer (sun)   enabled  for', _device.id, 'state', _timer.state, 'at', date, '/', new Date(date).toLocaleString());
 
         let job = schedule.scheduleJob(date, () => {
-            this.console.log('     Timer (sun)  activated for', _device.id, 'state', _timer.state);
+            this.logToFileAndConsole('     Timer (sun)  activated for', _device.id, 'state', _timer.state);
 
             this.console.log(device.plugin.deviceId, {
                 pluginId: device.plugin.id,
@@ -153,10 +159,14 @@ class DomustoTimer extends DomustoPlugin {
                 state: timer.state
             }, Domusto.SignalSender.client, device.plugin.id);
 
-            job.cancel();
+            let newDate = this.getSunTime(timer);
+
+            this.logToFileAndConsole('     Timer (sun)  rescheduled for', _device.id, 'state', _timer.state);
+
+            job.reschedule(newDate);
 
             // Reschedule for next day
-            this.scheduleSunTimer(_device, _timer);
+            // this.scheduleSunTimer(_device, _timer);
         });
 
     }
@@ -175,7 +185,8 @@ class DomustoTimer extends DomustoPlugin {
 
             if (signal.pluginId === device.plugin.id &&
                 signal.deviceId === device.plugin.deviceId &&
-                signal.data['state'] === timer.time) {
+                signal.data['state'] === timer.time &&
+                signal.sender === Domusto.SignalSender.plugin) {
 
                 let date = this._offsetDate(new Date(), _timer.offset);
 
