@@ -153,6 +153,9 @@ Source: https://raw.githubusercontent.com/mourner/suncalc/master/README.md
 
 ### Event timer Example
 
+Emits a signal after a given time.
+
+**Switch device off, 5 minutes after it was turned on**
 ```js
 {
     enabled: true,
