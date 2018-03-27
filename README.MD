@@ -159,7 +159,7 @@ Emits a signal after a given time.
 ```js
 {
     enabled: true,
-    offset: '5 * * * * *',
+    offset: '* 5 * * * *',
     time: 'on',
     state: 'off',
 },
