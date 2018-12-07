@@ -34,6 +34,19 @@ Execute in the domusto-server folder:
 $ ./domusto.js plugin add basvdijk/domusto-timer
 ```
 
+## Plugin configuration
+```js
+{
+    id: 'TIMER',
+    enabled: true,
+    settings: {
+        interval: 1000
+    }
+},
+```
+
+`Interval` (optional) is the time between the checks for expired timers which need to be activated
+
 ## Configuration
 Timers are set in the `plugin-settings` section of each device. Since the plugin is called `timer` its settings are set under the `timer` section as shown in the example below:
 

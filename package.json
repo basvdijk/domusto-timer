@@ -4,7 +4,7 @@
   "description": "Plugin to switch on time of sunrise / sunset etc.",
   "main": "index.js",
   "dependencies": {
-    "node-schedule": "^1.2.5",
+    "cron-parser": "^2.7.3",
     "suncalc": "^1.8.0"
   },
   "devDependencies": {},
@@ -16,7 +16,8 @@
     "url": "git+https://github.com/basvdijk/domusto-timer.git"
   },
   "keywords": [
-    "domusto", "domusto-plugin"
+    "domusto",
+    "domusto-plugin"
   ],
   "author": "Bas van Dijk",
   "license": "UNLICENSED",

@@ -10,7 +10,14 @@ import { Domusto } from '../../domusto/DomustoTypes';
 
 // PLUGIN SPECIFIC
 import * as SunCalc from 'suncalc';
-import * as schedule from 'node-schedule';
+import * as cronParser from 'cron-parser';
+
+
+interface Timer {
+    name: string;
+    time: number;
+    task: Function;
+}
 
 /**
  * Timers plugin for DOMUSTO Home Automation
@@ -21,6 +28,8 @@ import * as schedule from 'node-schedule';
  * @extends {DomustoPlugin}
  */
 class DomustoTimer extends DomustoPlugin {
+
+    timers: Array<Timer> = [];
 
     /**
      * Creates an instance of Domusto timer.
@@ -90,6 +99,9 @@ class DomustoTimer extends DomustoPlugin {
             }
         }
 
+        setInterval(() => this._checkExpiredTimers(), pluginConfiguration.settings && pluginConfiguration.settings.interval || 60000);
+        this._checkExpiredTimers();
+
         this.console.header(`${pluginConfiguration.id} plugin ready`);
 
     }
@@ -105,13 +117,44 @@ class DomustoTimer extends DomustoPlugin {
 
         this.console.log('    Timer (time)  enabled  for', device.id, 'state', timer.state, 'at', timer.time);
 
-        let job = schedule.scheduleJob(timer.time, () => {
+        // let job = schedule.scheduleJob(timer.time, () => {
+        //     this.console.log('     Timer (time)  activated for', device.id, 'state', timer.state);
+
+        //     this.broadcastSignal(device.plugin.deviceId, {
+        //         state: timer.state
+        //     }, Domusto.SignalSender.client, device.plugin.id);
+
+        // });
+
+        const _device = device;
+        const _timer = timer;
+        const _name = `(time) ${device.id} state ${timer.state}`;
+
+        const parsedTime = cronParser.parseExpression(_timer.time);
+        const date = parsedTime.next();
+
+        let job = () => {
             this.console.log('     Timer (time)  activated for', device.id, 'state', timer.state);
 
             this.broadcastSignal(device.plugin.deviceId, {
                 state: timer.state
             }, Domusto.SignalSender.client, device.plugin.id);
 
+            const parsedTime = cronParser.parseExpression(_timer.time);
+            const date = parsedTime.next();
+
+            this._addTimer({
+                time: date.toDate().valueOf(),
+                task: job,
+                name: _name
+            });
+
+        };
+
+        this._addTimer({
+            time: date.toDate().valueOf(),
+            task: job,
+            name: _name
         });
 
     }
@@ -140,15 +183,19 @@ class DomustoTimer extends DomustoPlugin {
      */
     scheduleSunTimer(device, timer) {
 
-        let _device = device;
-        let _timer = timer;
+        const _device = device;
+        const _timer = timer;
+        const _name = `(sun) ${device.id} state ${timer.state}`;
 
-        let date = this.getSunTime(_timer);
+        const date = this.getSunTime(_timer);
 
         this.logToFileAndConsole('    Timer (sun)   enabled  for', _device.id, 'state', _timer.state, 'at', date, '/', new Date(date).toLocaleString());
 
-        let job = schedule.scheduleJob(date, () => {
+        const job = () => {
             this.logToFileAndConsole('     Timer (sun)  activated for', _device.id, 'state', _timer.state);
+
+            const newDate = this.getSunTime(timer);
+            this.logToFileAndConsole('     Timer (sun)  rescheduled for', _device.id, 'state', _timer.state);
 
             this.console.log(device.plugin.deviceId, {
                 pluginId: device.plugin.id,
@@ -159,14 +206,22 @@ class DomustoTimer extends DomustoPlugin {
                 state: timer.state
             }, Domusto.SignalSender.client, device.plugin.id);
 
-            let newDate = this.getSunTime(timer);
+            const date = this.getSunTime(_timer);
 
-            this.logToFileAndConsole('     Timer (sun)  rescheduled for', _device.id, 'state', _timer.state);
-
-            job.reschedule(newDate);
+            this._addTimer({
+                time: date.valueOf(),
+                task: job,
+                name: _name
+            });
 
             // Reschedule for next day
             // this.scheduleSunTimer(_device, _timer);
+        };
+
+        this._addTimer({
+            time: date.valueOf(),
+            task: job,
+            name: _name
         });
 
     }
@@ -178,8 +233,9 @@ class DomustoTimer extends DomustoPlugin {
      */
     scheduleEventTimer(device, timer) {
 
-        let _device = device;
-        let _timer = timer;
+        const _device = device;
+        const _timer = timer;
+        const _name = `(offset) ${device.id} state ${timer.state}`;
 
         DomustoSignalHub.subject.subscribe((signal: Domusto.Signal) => {
 
@@ -188,18 +244,24 @@ class DomustoTimer extends DomustoPlugin {
                 signal.data['state'] === timer.time &&
                 signal.sender === Domusto.SignalSender.plugin) {
 
-                let date = this._offsetDate(new Date(), _timer.offset);
+                const date = this._offsetDate(new Date(), _timer.offset);
 
-                let job = schedule.scheduleJob(date, () => {
+                const job = () => {
                     this.console.log('   Timer (offset) activated for', _device.id, 'state', _timer.state);
 
                     this.broadcastSignal(device.plugin.deviceId, {
                         state: timer.state
                     }, Domusto.SignalSender.client, device.plugin.id);
 
-                    job.cancel();
+                };
 
+                this._addTimer({
+                    time: date.valueOf(),
+                    task: job,
+                    name: _name
                 });
+
+
             }
 
         });
@@ -242,6 +304,59 @@ class DomustoTimer extends DomustoPlugin {
 
         return date;
 
+    }
+
+    private _addTimer(timer: Timer) {
+
+        if (typeof timer.time !== 'number') {
+            this.console.error('Timer time should be number. Use Date.valueOf() to get the date as number');
+            return;
+        }
+
+        if (typeof timer.task !== 'function') {
+            this.console.error('Timer task is not a function');
+            return;
+        }
+
+        this.timers.push(timer);
+
+    }
+
+    private _checkExpiredTimers() {
+
+        const currentTime = Date.now();
+
+        for (let i = this.timers.length - 1; i >= 0; i--) {
+            let timer: Timer = this.timers[i];
+
+            const { d, h, m, s } = this._timeToString(timer.time - currentTime);
+
+            this.console.log(i, timer.name, new Date(timer.time), `${d}d ${h}h ${m}m ${s}s`);
+
+            if (timer.time < currentTime && typeof timer.task === 'function') {
+                timer.task();
+                this.timers.splice(0, 1);
+            }
+        }
+    }
+
+    private _timeToString(time) {
+        let d, h, m, s;
+        s = Math.floor(time / 1000);
+        m = Math.floor(s / 60);
+        s = s % 60;
+        h = Math.floor(m / 60);
+        m = m % 60;
+        d = Math.floor(h / 24);
+        h = h % 24;
+        h += d * 24;
+
+        return {
+            d,
+            h,
+            m,
+            s,
+          };
     }
 
 }
