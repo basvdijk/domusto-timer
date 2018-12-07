@@ -14,7 +14,7 @@ import * as cronParser from 'cron-parser';
 
 
 interface Timer {
-    name: string;
+    label: string;
     time: number;
     task: Function;
 }
@@ -29,7 +29,7 @@ interface Timer {
  */
 class DomustoTimer extends DomustoPlugin {
 
-    timers: Array<Timer> = [];
+    timerQueue: Array<Timer> = [];
 
     /**
      * Creates an instance of Domusto timer.
@@ -117,18 +117,8 @@ class DomustoTimer extends DomustoPlugin {
 
         this.console.log('    Timer (time)  enabled  for', device.id, 'state', timer.state, 'at', timer.time);
 
-        // let job = schedule.scheduleJob(timer.time, () => {
-        //     this.console.log('     Timer (time)  activated for', device.id, 'state', timer.state);
-
-        //     this.broadcastSignal(device.plugin.deviceId, {
-        //         state: timer.state
-        //     }, Domusto.SignalSender.client, device.plugin.id);
-
-        // });
-
-        const _device = device;
         const _timer = timer;
-        const _name = `(time) ${device.id} state ${timer.state}`;
+        const _label = `(time) ${device.id} state ${timer.state}`;
 
         const parsedTime = cronParser.parseExpression(_timer.time);
         const date = parsedTime.next();
@@ -143,18 +133,18 @@ class DomustoTimer extends DomustoPlugin {
             const parsedTime = cronParser.parseExpression(_timer.time);
             const date = parsedTime.next();
 
-            this._addTimer({
+            this._queueTimer({
                 time: date.toDate().valueOf(),
                 task: job,
-                name: _name
+                label: _label
             });
 
         };
 
-        this._addTimer({
+        this._queueTimer({
             time: date.toDate().valueOf(),
             task: job,
-            name: _name
+            label: _label
         });
 
     }
@@ -185,7 +175,7 @@ class DomustoTimer extends DomustoPlugin {
 
         const _device = device;
         const _timer = timer;
-        const _name = `(sun) ${device.id} state ${timer.state}`;
+        const _label = `(sun) ${device.id} state ${timer.state}`;
 
         const date = this.getSunTime(_timer);
 
@@ -194,7 +184,6 @@ class DomustoTimer extends DomustoPlugin {
         const job = () => {
             this.logToFileAndConsole('     Timer (sun)  activated for', _device.id, 'state', _timer.state);
 
-            const newDate = this.getSunTime(timer);
             this.logToFileAndConsole('     Timer (sun)  rescheduled for', _device.id, 'state', _timer.state);
 
             this.console.log(device.plugin.deviceId, {
@@ -206,22 +195,20 @@ class DomustoTimer extends DomustoPlugin {
                 state: timer.state
             }, Domusto.SignalSender.client, device.plugin.id);
 
-            const date = this.getSunTime(_timer);
+            const newDate = this.getSunTime(_timer);
 
-            this._addTimer({
-                time: date.valueOf(),
+            this._queueTimer({
+                time: newDate.valueOf(),
                 task: job,
-                name: _name
+                label: _label
             });
 
-            // Reschedule for next day
-            // this.scheduleSunTimer(_device, _timer);
         };
 
-        this._addTimer({
+        this._queueTimer({
             time: date.valueOf(),
             task: job,
-            name: _name
+            label: _label
         });
 
     }
@@ -235,7 +222,7 @@ class DomustoTimer extends DomustoPlugin {
 
         const _device = device;
         const _timer = timer;
-        const _name = `(offset) ${device.id} state ${timer.state}`;
+        const _label = `(offset) ${device.id} state ${timer.state}`;
 
         DomustoSignalHub.subject.subscribe((signal: Domusto.Signal) => {
 
@@ -243,8 +230,6 @@ class DomustoTimer extends DomustoPlugin {
                 signal.deviceId === device.plugin.deviceId &&
                 signal.data['state'] === timer.time &&
                 signal.sender === Domusto.SignalSender.plugin) {
-
-                const date = this._offsetDate(new Date(), _timer.offset);
 
                 const job = () => {
                     this.console.log('   Timer (offset) activated for', _device.id, 'state', _timer.state);
@@ -255,10 +240,11 @@ class DomustoTimer extends DomustoPlugin {
 
                 };
 
-                this._addTimer({
-                    time: date.valueOf(),
+                const newDate = this._offsetDate(new Date(), _timer.offset);
+                this._queueTimer({
+                    time: newDate.valueOf(),
                     task: job,
-                    name: _name
+                    label: _label
                 });
 
 
@@ -306,7 +292,7 @@ class DomustoTimer extends DomustoPlugin {
 
     }
 
-    private _addTimer(timer: Timer) {
+    private _queueTimer(timer: Timer) {
 
         if (typeof timer.time !== 'number') {
             this.console.error('Timer time should be number. Use Date.valueOf() to get the date as number');
@@ -318,7 +304,7 @@ class DomustoTimer extends DomustoPlugin {
             return;
         }
 
-        this.timers.push(timer);
+        this.timerQueue.push(timer);
 
     }
 
@@ -326,37 +312,38 @@ class DomustoTimer extends DomustoPlugin {
 
         const currentTime = Date.now();
 
-        for (let i = this.timers.length - 1; i >= 0; i--) {
-            let timer: Timer = this.timers[i];
+        for (let i = this.timerQueue.length - 1; i >= 0; i--) {
+            let timer: Timer = this.timerQueue[i];
 
-            const { d, h, m, s } = this._timeToString(timer.time - currentTime);
+            const { days, hours, minutes, seconds } = this._timeToString(timer.time - currentTime);
 
-            this.console.log(i, timer.name, new Date(timer.time), `${d}d ${h}h ${m}m ${s}s`);
+            this.console.debug(i, timer.label, new Date(timer.time), `${days}d ${hours}h ${minutes}m ${seconds}s`);
 
             if (timer.time < currentTime && typeof timer.task === 'function') {
                 timer.task();
-                this.timers.splice(0, 1);
+                this.timerQueue.splice(0, 1);
             }
         }
     }
 
     private _timeToString(time) {
-        let d, h, m, s;
-        s = Math.floor(time / 1000);
-        m = Math.floor(s / 60);
-        s = s % 60;
-        h = Math.floor(m / 60);
-        m = m % 60;
-        d = Math.floor(h / 24);
-        h = h % 24;
-        h += d * 24;
+        let days, hours, minutes, seconds, mseconds;
+        mseconds = Math.floor(time / 1000);
+        minutes = Math.floor(seconds / 60);
+        seconds = seconds % 60;
+        hours = Math.floor(minutes / 60);
+        minutes = minutes % 60;
+        days = Math.floor(hours / 24);
+        hours = hours % 24;
+        hours += days * 24;
 
         return {
-            d,
-            h,
-            m,
-            s,
-          };
+            days,
+            hours,
+            minutes,
+            seconds,
+            mseconds
+        };
     }
 
 }
