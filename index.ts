@@ -327,8 +327,8 @@ class DomustoTimer extends DomustoPlugin {
     }
 
     private _timeToString(time) {
-        let days, hours, minutes, seconds, mseconds;
-        mseconds = Math.floor(time / 1000);
+        let days, hours, minutes, seconds;
+        seconds = Math.floor(time / 1000);
         minutes = Math.floor(seconds / 60);
         seconds = seconds % 60;
         hours = Math.floor(minutes / 60);
@@ -342,7 +342,6 @@ class DomustoTimer extends DomustoPlugin {
             hours,
             minutes,
             seconds,
-            mseconds
         };
     }
 
