@@ -317,7 +317,7 @@ class DomustoTimer extends DomustoPlugin {
 
             const { days, hours, minutes, seconds } = this._timeToString(timer.time - currentTime);
 
-            this.console.debug(i, timer.label, new Date(timer.time), `${days}d ${hours}h ${minutes}m ${seconds}s`);
+            this.console.debug(i, timer.label, new Date(timer.time).toLocaleString(), `${days}d ${hours}h ${minutes}m ${seconds}s`);
 
             if (timer.time < currentTime && typeof timer.task === 'function') {
                 timer.task();
@@ -327,15 +327,18 @@ class DomustoTimer extends DomustoPlugin {
     }
 
     private _timeToString(time) {
-        let days, hours, minutes, seconds;
-        seconds = Math.floor(time / 1000);
-        minutes = Math.floor(seconds / 60);
-        seconds = seconds % 60;
-        hours = Math.floor(minutes / 60);
-        minutes = minutes % 60;
-        days = Math.floor(hours / 24);
-        hours = hours % 24;
-        hours += days * 24;
+
+        const timeSeconds = Math.floor(time / 1000);
+        const mSeconds = time % 1000;
+
+        const days = Math.floor(timeSeconds / (3600 * 24));
+        let remainder = timeSeconds % (3600 * 24);
+
+        const hours = Math.floor(timeSeconds / 3600);
+        remainder = timeSeconds % 3600;
+
+        const minutes = Math.floor(remainder / 60);
+        const seconds = remainder % 60;
 
         return {
             days,
