@@ -118,7 +118,7 @@ class DomustoTimer extends DomustoPlugin {
         this.console.log('    Timer (time)  enabled  for', device.id, 'state', timer.state, 'at', timer.time);
 
         const _timer = timer;
-        const _label = `(time) ${device.id} state ${timer.state}`;
+        const _label = `(time) ${device.id.padEnd(10)} state ${timer.state.padEnd(4)}`;
 
         const parsedTime = cronParser.parseExpression(_timer.time);
         const date = parsedTime.next();
@@ -175,7 +175,7 @@ class DomustoTimer extends DomustoPlugin {
 
         const _device = device;
         const _timer = timer;
-        const _label = `(sun) ${device.id} state ${timer.state}`;
+        const _label = `(sun)  ${device.id.padEnd(10)} state ${timer.state.padEnd(4)}`;
 
         const date = this.getSunTime(_timer);
 
@@ -306,6 +306,8 @@ class DomustoTimer extends DomustoPlugin {
 
         this.timerQueue.push(timer);
 
+        this.timerQueue.sort(this._sortTimerQueueByTime);
+
     }
 
     private _checkExpiredTimers() {
@@ -317,13 +319,23 @@ class DomustoTimer extends DomustoPlugin {
 
             const { days, hours, minutes, seconds } = this._timeToString(timer.time - currentTime);
 
-            this.console.debug(i, timer.label, new Date(timer.time).toLocaleString(), `${days}d ${hours}h ${minutes}m ${seconds}s`);
+            this.console.debug(i.toString().padStart(2), timer.label, (`${days}d ${hours}h ${minutes}m ${seconds}s `).padEnd(15), new Date(timer.time).toLocaleString().split(',')[0].padEnd(10), new Date(timer.time).toLocaleString().split(',')[1].padStart(10));
 
             if (timer.time < currentTime && typeof timer.task === 'function') {
                 timer.task();
-                this.timerQueue.splice(0, 1);
+                this.timerQueue.splice(i, 1);
             }
         }
+    }
+
+    private _sortTimerQueueByTime(a, b) {
+        if (a.time < b.time) {
+            return 1;
+        }
+        if (a.time > b.time) {
+            return -1;
+        }
+        return 0;
     }
 
     private _timeToString(time) {
