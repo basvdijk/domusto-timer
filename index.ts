@@ -331,7 +331,7 @@ class DomustoTimer extends DomustoPlugin {
                 timer.label,
                 `${day}-${month}-${year}`.padEnd(10),
                 this._amPmTo24h(timestamp).padStart(10),
-                (`  ${days}d ${hours}h ${minutes}m ${seconds}s `).padEnd(18)
+                (`  ${days}d ${hours.toString().padStart(2)}h ${minutes.toString().padStart(2)}m ${seconds.toString().padStart(2)}s `).padEnd(18)
             );
             if (timer.time < currentTime && typeof timer.task === 'function') {
                 timer.task();
@@ -376,7 +376,8 @@ class DomustoTimer extends DomustoPlugin {
         const days = Math.floor(timeSeconds / (3600 * 24));
         let remainder = timeSeconds % (3600 * 24);
 
-        const hours = Math.floor(remainder / 3600);
+        let hours = Math.floor(remainder / 3600);
+
         remainder = remainder % 3600;
 
         const minutes = Math.floor(remainder / 60);
