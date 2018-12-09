@@ -319,8 +319,19 @@ class DomustoTimer extends DomustoPlugin {
 
             const { days, hours, minutes, seconds } = this._timeToString(timer.time - currentTime);
 
-            this.console.debug(i.toString().padStart(2), timer.label, (`${days}d ${hours}h ${minutes}m ${seconds}s `).padEnd(15), new Date(timer.time).toLocaleString().split(',')[0].padEnd(10), new Date(timer.time).toLocaleString().split(',')[1].padStart(10));
+            const date = new Date(timer.time).toLocaleString().split(',')[0].split('/');
+            const year = date[2];
+            const month = date[0].length === 1 ? '0' + date[0] : date[0];
+            const day = date[1].length === 1 ? '0' + date[1] : date[1];
 
+            const timestamp = new Date(timer.time).toLocaleString().split(',')[1];
+
+            this.console.debug(
+                i.toString().padStart(2),
+                timer.label,
+                (`${days}d ${hours}h ${minutes}m ${seconds}s `).padEnd(18),
+                `${day}-${month}-${year}`.padEnd(10),
+                this._amPmTo24h(timestamp).padStart(10));
             if (timer.time < currentTime && typeof timer.task === 'function') {
                 timer.task();
                 this.timerQueue.splice(i, 1);
@@ -336,6 +347,20 @@ class DomustoTimer extends DomustoPlugin {
             return -1;
         }
         return 0;
+    }
+
+    private _amPmTo24h(time) {
+
+        let hours = time.split(':')[0];
+        const minutes = time.split(':')[1];
+        const seconds = time.split(':')[2].split(' ')[0];
+        const amPm =  time.split(' ')[2];
+
+        if (amPm === 'PM') {
+            hours = parseInt(hours) + 12;
+        }
+
+        return `${hours}:${minutes}:${seconds}`;
     }
 
     private _timeToString(time) {
