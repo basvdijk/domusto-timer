@@ -115,10 +115,10 @@ class DomustoTimer extends DomustoPlugin {
      */
     scheduleCronTimer(device, timer) {
 
-        this.console.log('    Timer (time)  enabled  for', device.id, 'state', timer.state, 'at', timer.time);
+        this.console.log('    Timer (time)  enabled  for', device.id, device.name, 'state', timer.state, 'at', timer.time);
 
         const _timer = timer;
-        const _label = `(time) ${device.id.padEnd(10)} state ${timer.state.padEnd(4)}`;
+        const _label = `(time) ${device.id.padEnd(10)} ${device.name.padEnd(10)} state ${timer.state.padEnd(4)}`;
 
         const parsedTime = cronParser.parseExpression(_timer.time);
         const date = parsedTime.next();
@@ -175,11 +175,11 @@ class DomustoTimer extends DomustoPlugin {
 
         const _device = device;
         const _timer = timer;
-        const _label = `(sun)  ${device.id.padEnd(10)} state ${timer.state.padEnd(4)}`;
+        const _label = `(sun)  ${device.id.padEnd(10)} ${device.name.padEnd(10)} state ${timer.state.padEnd(4)}`;
 
         const date = this.getSunTime(_timer);
 
-        this.logToFileAndConsole('    Timer (sun)   enabled  for', _device.id, 'state', _timer.state, 'at', date, '/', new Date(date).toLocaleString());
+        this.logToFileAndConsole('    Timer (sun)   enabled  for', _device.id, _device._name, 'state', _timer.state, 'at', date, '/', new Date(date).toLocaleString());
 
         const job = () => {
             this.logToFileAndConsole('     Timer (sun)  activated for', _device.id, 'state', _timer.state);
@@ -222,7 +222,7 @@ class DomustoTimer extends DomustoPlugin {
 
         const _device = device;
         const _timer = timer;
-        const _label = `(offset) ${device.id} state ${timer.state}`;
+        const _label = `(offset) ${device.id.padEnd(10)} ${device.name.padEnd(10)} state ${timer.state}`;
 
         DomustoSignalHub.subject.subscribe((signal: Domusto.Signal) => {
 
@@ -232,7 +232,7 @@ class DomustoTimer extends DomustoPlugin {
                 signal.sender === Domusto.SignalSender.plugin) {
 
                 const job = () => {
-                    this.console.log('   Timer (offset) activated for', _device.id, 'state', _timer.state);
+                    this.console.log('   Timer (offset) activated for', _device.id, _device.name, 'state', _timer.state);
 
                     this.broadcastSignal(device.plugin.deviceId, {
                         state: timer.state
